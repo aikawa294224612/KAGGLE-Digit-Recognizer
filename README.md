@@ -1,6 +1,8 @@
 # KAGGLE-Digit-Recognizer
 kaggle: https://www.kaggle.com/c/digit-recognizer/overview
 
+**Public Score**: 0.98567
+
 ```python
 # This Python 3 environment comes with many helpful analytics libraries installed
 # It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
@@ -34,8 +36,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, LeakyReLU, Conv2D, MaxPool2D, Flatten
-from keras.optimizers import RMSprop
+from keras.layers import Dense, Dropout, Conv2D, MaxPool2D, Flatten, BatchNormalization, Activation
 from keras import backend as K
 ```
 
@@ -44,7 +45,7 @@ from keras import backend as K
 training_path = "/kaggle/input/digit-recognizer/train.csv"
 testing_path = "/kaggle/input/digit-recognizer/test.csv"
 
-epoch = 10
+epoch = 15
 batchsize = 64
 image_size = 28
 ```
@@ -272,39 +273,80 @@ print(y_train[0])
 
 
 ```python
-model1 = Sequential()
-model1.add(Conv2D(filters=32, kernel_size=3, input_shape=(1, image_size, image_size), activation='relu', padding='same'))
-model1.add(MaxPool2D(pool_size=2, data_format='channels_first'))
-model1.add(Flatten())
-model1.add(Dense(256, activation='relu'))
-model1.add(Dense(10, activation='softmax'))
-model1.summary()
+model = Sequential()
+model.add(Conv2D(filters=32, kernel_size=3, input_shape=(1, image_size, image_size), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(MaxPool2D(pool_size=2, data_format='channels_first'))
+model.add(Dropout(0.2))
+
+model.add(Conv2D(filters=64, kernel_size=3, padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(MaxPool2D(pool_size=2, data_format='channels_first'))
+model.add(Dropout(0.2))
+
+model.add(Conv2D(filters=128, kernel_size=3, padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(MaxPool2D(pool_size=2, data_format='channels_first'))
+model.add(Dropout(0.2))
+
+model.add(Flatten())
+model.add(Dense(512))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(Dropout(0.2))
+model.add(Dense(10, activation='softmax'))
+model.summary()
 ```
 
-    Model: "sequential"
+    Model: "sequential_9"
     _________________________________________________________________
     Layer (type)                 Output Shape              Param #   
     =================================================================
-    conv2d (Conv2D)              (None, 1, 28, 32)         8096      
+    conv2d_10 (Conv2D)           (None, 1, 28, 32)         8096      
     _________________________________________________________________
-    max_pooling2d (MaxPooling2D) (None, 1, 14, 16)         0         
+    batch_normalization_8 (Batch (None, 1, 28, 32)         128       
     _________________________________________________________________
-    flatten (Flatten)            (None, 224)               0         
+    activation_8 (Activation)    (None, 1, 28, 32)         0         
     _________________________________________________________________
-    dense (Dense)                (None, 256)               57600     
+    max_pooling2d_9 (MaxPooling2 (None, 1, 14, 16)         0         
     _________________________________________________________________
-    dense_1 (Dense)              (None, 10)                2570      
+    dropout_4 (Dropout)          (None, 1, 14, 16)         0         
+    _________________________________________________________________
+    conv2d_11 (Conv2D)           (None, 1, 14, 64)         9280      
+    _________________________________________________________________
+    batch_normalization_9 (Batch (None, 1, 14, 64)         256       
+    _________________________________________________________________
+    activation_9 (Activation)    (None, 1, 14, 64)         0         
+    _________________________________________________________________
+    max_pooling2d_10 (MaxPooling (None, 1, 7, 32)          0         
+    _________________________________________________________________
+    dropout_5 (Dropout)          (None, 1, 7, 32)          0         
+    _________________________________________________________________
+    flatten_3 (Flatten)          (None, 224)               0         
+    _________________________________________________________________
+    dense_6 (Dense)              (None, 512)               115200    
+    _________________________________________________________________
+    batch_normalization_10 (Batc (None, 512)               2048      
+    _________________________________________________________________
+    activation_10 (Activation)   (None, 512)               0         
+    _________________________________________________________________
+    dropout_6 (Dropout)          (None, 512)               0         
+    _________________________________________________________________
+    dense_7 (Dense)              (None, 10)                5130      
     =================================================================
-    Total params: 68,266
-    Trainable params: 68,266
-    Non-trainable params: 0
+    Total params: 140,138
+    Trainable params: 138,922
+    Non-trainable params: 1,216
     _________________________________________________________________
     
 
 
 ```python
-model1.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-h = model1.fit(x_train, y_train, epochs=epoch, batch_size=batchsize, verbose=1, validation_split=0.15)
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+h = model.fit(x_train, y_train, epochs=epoch, batch_size=batchsize, verbose=1, validation_split=0.15)
 
 print(h.history.keys())
 print("Acc:", h.history['accuracy'][-1])
@@ -323,19 +365,39 @@ show_train_history(h, 'accuracy', 'val_accuracy', 'Train History')
 show_train_history(h, 'loss', 'val_loss', 'Loss History')  
 ```
 
-    Epoch 1/5
-    558/558 [==============================] - 5s 4ms/step - loss: 0.7223 - accuracy: 0.7976 - val_loss: 0.1674 - val_accuracy: 0.9492
-    Epoch 2/5
-    558/558 [==============================] - 2s 3ms/step - loss: 0.1607 - accuracy: 0.9511 - val_loss: 0.1089 - val_accuracy: 0.9668
-    Epoch 3/5
-    558/558 [==============================] - 2s 3ms/step - loss: 0.1108 - accuracy: 0.9663 - val_loss: 0.1069 - val_accuracy: 0.9662
-    Epoch 4/5
-    558/558 [==============================] - 2s 3ms/step - loss: 0.0782 - accuracy: 0.9765 - val_loss: 0.0850 - val_accuracy: 0.9752
-    Epoch 5/5
-    558/558 [==============================] - 2s 3ms/step - loss: 0.0638 - accuracy: 0.9817 - val_loss: 0.0654 - val_accuracy: 0.9798
+    Epoch 1/15
+    558/558 [==============================] - 3s 4ms/step - loss: 0.7141 - accuracy: 0.7622 - val_loss: 0.1103 - val_accuracy: 0.9638
+    Epoch 2/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.2018 - accuracy: 0.9365 - val_loss: 0.0859 - val_accuracy: 0.9732
+    Epoch 3/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.1599 - accuracy: 0.9487 - val_loss: 0.0731 - val_accuracy: 0.9754
+    Epoch 4/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.1291 - accuracy: 0.9586 - val_loss: 0.0757 - val_accuracy: 0.9746
+    Epoch 5/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.1257 - accuracy: 0.9601 - val_loss: 0.0639 - val_accuracy: 0.9771
+    Epoch 6/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.1099 - accuracy: 0.9639 - val_loss: 0.0546 - val_accuracy: 0.9827
+    Epoch 7/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0996 - accuracy: 0.9682 - val_loss: 0.0515 - val_accuracy: 0.9840
+    Epoch 8/15
+    558/558 [==============================] - 3s 5ms/step - loss: 0.0959 - accuracy: 0.9689 - val_loss: 0.0524 - val_accuracy: 0.9817
+    Epoch 9/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0906 - accuracy: 0.9702 - val_loss: 0.0537 - val_accuracy: 0.9822
+    Epoch 10/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0828 - accuracy: 0.9724 - val_loss: 0.0501 - val_accuracy: 0.9843
+    Epoch 11/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0826 - accuracy: 0.9731 - val_loss: 0.0595 - val_accuracy: 0.9827
+    Epoch 12/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0796 - accuracy: 0.9743 - val_loss: 0.0472 - val_accuracy: 0.9856
+    Epoch 13/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0705 - accuracy: 0.9765 - val_loss: 0.0494 - val_accuracy: 0.9841
+    Epoch 14/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0718 - accuracy: 0.9763 - val_loss: 0.0474 - val_accuracy: 0.9859
+    Epoch 15/15
+    558/558 [==============================] - 2s 4ms/step - loss: 0.0714 - accuracy: 0.9767 - val_loss: 0.0441 - val_accuracy: 0.9860
     dict_keys(['loss', 'accuracy', 'val_loss', 'val_accuracy'])
-    Acc: 0.981680691242218
-    Val Acc: 0.9798412919044495
+    Acc: 0.9761624932289124
+    Val Acc: 0.9860317707061768
     
 
 
@@ -348,13 +410,13 @@ show_train_history(h, 'loss', 'val_loss', 'Loss History')
 
 
 ```python
-predictions = model1.predict(x_test)
+predictions = model.predict(x_test)
 predictions = np.argmax(predictions,axis=1)
 
 print(predictions[:5])
 ```
 
-    [2 0 9 9 3]
+    [2 0 9 0 3]
     
 
 
@@ -373,4 +435,3 @@ submission.to_csv("submission.csv", index = False)
 ```python
 
 ```
-
