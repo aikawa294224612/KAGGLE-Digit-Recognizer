@@ -3,7 +3,7 @@ kaggle: https://www.kaggle.com/c/digit-recognizer/overview
 
 **Public Score**: 0.99164
 
-[Imgur](https://imgur.com/VnJrahB.jpg)
+![Imgur](https://imgur.com/VnJrahB.jpg)
 
 ```python
 # This Python 3 environment comes with many helpful analytics libraries installed
